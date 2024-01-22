@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Request App with Parameters</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 50px;
+        }
+        button {
+            margin: 10px;
+            padding: 10px;
+        }
+        select {
+            margin-bottom: 20px;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>API Request App</h1>
+    <select id="numberSelect">
+        <!-- Options will be populated using JavaScript -->
+    </select>
+    <br>
+    <button onclick="sendApiRequest('https://api.example1.com')">API Request 1</button>
+    <button onclick="sendApiRequest('https://api.example2.com')">API Request 2</button>
+    <button onclick="sendApiRequest('https://api.example3.com')">API Request 3</button>
+
+    <script>
+        function populateDropdown() {
+            const select = document.getElementById('numberSelect');
+            for (let i = 1; i <= 100; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.text = i;
+                select.appendChild(option);
+            }
+
+            // Set default value from URL query parameter 'table' if exists
+            const urlParams = new URLSearchParams(window.location.search);
+            const tableValue = urlParams.get('table');
+            if (tableValue && !isNaN(tableValue)) {
+                select.value = tableValue;
+            }
+        }
+
+        function sendApiRequest(apiUrl) {
+            const selectedNumber = document.getElementById('numberSelect').value;
+            const fullUrl = `${apiUrl}?table=${selectedNumber}`;
+            fetch(fullUrl)
+                .then(response => response.json())
+                .then(data => console.log(data))
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Populate dropdown on page load
+        window.onload = populateDropdown;
+    </script>
+</body>
+</html>
