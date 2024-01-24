@@ -78,10 +78,26 @@
             const selectedNumber = document.getElementById('numberSelect').value;
             const fullUrl = `${apiHost}/api/CustomerServices/${requestedAction}?tableNumber=${selectedNumber}`;
             console.log(fullUrl);
-            fetch(fullUrl)
-                .then(data => console.log(data))
-                .catch(error => console.error('Error:', error));
+            
+            fetch(fullUrl, {
+        method: 'GET', // or 'POST' etc.
+        mode: 'cors', // no-cors, cors, *same-origin
+        headers: {
+            'Content-Type': 'application/json', 
+            'ngrok-skip-browser-warning': 'true',
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
         }
+        return response.text(); // or .text() if the response is not JSON
+    })
+    .then(data => console.log(data))
+    .catch(error => console.error('Error:', error));
+        }
+        
+        
 
         // Populate dropdown on page load
         window.onload = populateDropdown;
