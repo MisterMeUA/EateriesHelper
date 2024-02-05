@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html style="height: 100%;">
+<head>
+    <title>Requests Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/3.1.7/signalr.min.js"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        #controls {
+            margin: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #requestsTable_wrapper {
+            flex-grow: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <input type="text" id="endpointInput" placeholder="Enter Host Endpoint" style="flex-grow: 1; margin-right: 10px;">
+        <button id="deleteAll">Delete All</button>
+    </div>
+    <table id="requestsTable" class="display" style="width:100%;">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Creation Date</th>
+                <th>Request</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+        let endpoint = ''; // Default endpoint
+        let connection;
+
+        function connectSignalR() {
+            endpoint = $('#endpointInput').val() || 'http://localhost:8082'; // Fallback to localhost if no input
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl(`${endpoint}/requestHub`, {skipNegotiation: true, transport: signalR.HttpTransportType.WebSockets,}) // Use the input value for the endpoint
+                .configureLogging(signalR.LogLevel.Information)
+                .build();
+
+            setupSignalR();
+            start();
+        }
+
+        function setupSignalR() {
+            connection.on("ReceiveRequest", function(request) {
+                dataTable.row.add([
+                    request.id,
+                    new Date(request.creationDateTime).toLocaleString(),
+                    request.request,
+                    `<button onclick="deleteRequest('${request.id}')">Delete</button>`
+                ]).draw(false);
+            });
+
+            connection.on("DeleteRequest", function(id) {
+                dataTable.rows().every(function() {
+                    if (this.data()[0] === id) {
+                        dataTable.row(this).remove().draw();
+                    }
+                });
+            });
+
+            connection.on("LoadExistingRequests", function(requests) {
+                dataTable.clear(); // Clear the table before adding new rows
+                requests.forEach(request => {
+                    dataTable.row.add([
+                        request.id,
+                        new Date(request.creationDateTime).toLocaleString(),
+                        request.request,
+                        `<button onclick="deleteRequest('${request.id}')">Delete</button>`
+                    ]).draw(false);
+                });
+            });
+        }
+
+        async function start() {
+            try {
+                await connection.start();
+                console.log("SignalR Connected.");
+                connection.invoke("GetAllRequests");
+            } catch (err) {
+                console.error(err);
+                setTimeout(start, 5000);
+            }
+        }
+
+        let dataTable = $('#requestsTable').DataTable({
+            "scrollY": "100%",
+            "scrollCollapse": true,
+            "paging": false
+        });
+
+        function deleteRequest(id) {
+            connection.invoke("DeleteRequest", id);
+        }
+
+        $('#deleteAll').click(function() {
+            $.ajax({
+                url: `${endpoint}/api/CustomerServices/request`, // Use the input value for the endpoint
+                type: 'DELETE',
+                success: function(result) {
+                    dataTable.clear().draw(); // Clear the table on successful delete
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error deleting all requests:", xhr.responseText);
+                }
+            });
+        });
+
+        // Initial connection setup
+        $('#endpointInput').on('change', function() {
+            if(connection) {
+                connection.stop().then(connectSignalR);
+            } else {
+                connectSignalR();
+            }
+        });
+
+        // Connect on page load with default or previous session endpoint if available
+        $(document).ready(function() {
+            connectSignalR(); // Attempt to connect with default or input-specified endpoint
+        });
+    </script>
+</body>
+</html>
