@@ -2,52 +2,123 @@
 <html style="height: 100%;">
 <head>
     <title>Requests Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.css">
     <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/3.1.7/signalr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        html, body {
-            height: 100%;
+        body {
             margin: 0;
             display: flex;
             flex-direction: column;
+            min-height: 100vh;
+
+            background-image: linear-gradient(rgba(255, 255, 255, 0), rgba(0, 0, 0, 0.8)), url("./images/background.jpg");
+            background-size: cover;
+            background-position: center;
         }
-        #controls {
-            margin: 10px;
+
+        main {
+            flex-grow: 1;
             display: flex;
-            justify-content: space-between;
             align-items: center;
         }
-        #requestsTable_wrapper {
-            flex-grow: 1;
+
+        footer {
+            flex-shrink: 0;
+        }
+
+        .logo {
+            width: 70px;
+            height: 100%;
+        }
+
+        nav {
+            background: transparent;
+            box-shadow: none;
+        }
+
+        nav .brand-logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .page-footer {
+            background-color: transparent;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .input-field>label, input::placeholder, label {
+            color: #444;
+        }
+
+        input:not([type]), input[type=text]:not(.browser-default), input[type=password]:not(.browser-default), input[type=email]:not(.browser-default), input[type=url]:not(.browser-default), input[type=time]:not(.browser-default), input[type=date]:not(.browser-default), input[type=datetime]:not(.browser-default), input[type=datetime-local]:not(.browser-default), input[type=tel]:not(.browser-default), input[type=number]:not(.browser-default), input[type=search]:not(.browser-default), textarea.materialize-textarea {
+            border-bottom: 1px solid #444;
+        }
+
+        .dataTables_wrapper .dataTables_filter {
+            float: left;
+            text-align: left;
         }
     </style>
 </head>
 <body>
-    <div id="controls">
-        <input type="text" id="endpointInput" placeholder="Enter Host Endpoint" style="flex-grow: 1; margin-right: 10px;">
-        <button id="deleteAll">Delete All</button>
-    </div>
-    <table id="requestsTable" class="display" style="width:100%;">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Creation Date</th>
-                <th>Request</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
+    <header>
+        <nav role="navigation">
+            <div class="nav-wrapper container">
+                <a id="logo-container" href="/" class="brand-logo left">
+                    <img src="./images/logo.png" alt="logo" class="logo"> <div class="hide-on-small-only">L'Envol Art Space</div>
+                </a>
+                <ul class="right">
+                    <li>
+                        <a class="waves-effect waves-light btn" target="_blank" href="https://cdn.sanity.io/files/91ree6di/preview/e40b8b048bf3da54e6cf315b3602885f78ca9f89.pdf"><i class="material-icons left">room_service</i> Menu</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+    <main>
+        <div class="container">
+            <div class="card">
+                <div class="card-content">
+                    <button id="deleteAll" class="waves-effect waves-light btn" style="position: absolute; right: 20px;"><i class="material-icons left">delete</i> Delete All</button>
+                    <table class="highlight" id="requestsTable" style="width:100%;">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Date</th>
+                            <th>Request</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer>
+        1
+    </footer>
 
     <script>
+        $(document).ready(function(){
+            $('.sidenav').sidenav();
+        });
+
         let endpoint = ''; // Default endpoint
         let connection;
 
         function connectSignalR() {
-            endpoint = $('#endpointInput').val() || 'http://localhost:8082'; // Fallback to localhost if no input
+            endpoint = 'http://localhost:8082'; // Fallback to localhost if no input
             connection = new signalR.HubConnectionBuilder()
                 .withUrl(`${endpoint}/requestHub`, {skipNegotiation: true, transport: signalR.HttpTransportType.WebSockets,}) // Use the input value for the endpoint
                 .configureLogging(signalR.LogLevel.Information)
@@ -136,5 +207,6 @@
             connectSignalR(); // Attempt to connect with default or input-specified endpoint
         });
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </body>
 </html>
