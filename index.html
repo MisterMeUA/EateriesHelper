@@ -145,7 +145,7 @@
         }
 
         function sendApiRequest(requestedAction) {
-            const apiHost = 'http://ec2-3-82-128-6.compute-1.amazonaws.com:8081';
+            const apiHost = 'http://ec2-3-82-128-6.compute-1.amazonaws.com:8080';
             const selectedNumber = document.getElementById('numberSelect').value;
             const fullUrl = `${apiHost}/api/CustomerServices/${requestedAction}?tableNumber=${selectedNumber}`;
             console.log(fullUrl);

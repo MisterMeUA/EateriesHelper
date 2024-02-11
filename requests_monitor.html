@@ -122,7 +122,7 @@
         let connection;
 
         function connectSignalR() {
-            endpoint = 'http://ec2-3-82-128-6.compute-1.amazonaws.com:8081'; // Fallback to localhost if no input
+            endpoint = 'http://ec2-3-82-128-6.compute-1.amazonaws.com:8080'; // Fallback to localhost if no input
             connection = new signalR.HubConnectionBuilder()
                 .withUrl(`${endpoint}/requestHub`, { skipNegotiation: true, transport: signalR.HttpTransportType.WebSockets, }) // Use the input value for the endpoint
                 .configureLogging(signalR.LogLevel.Information)
