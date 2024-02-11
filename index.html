@@ -145,7 +145,7 @@
         }
 
         function sendApiRequest(requestedAction) {
-            const apiHost = 'https://api.default.com';
+            const apiHost = 'http://localhost:8082';
             const selectedNumber = document.getElementById('numberSelect').value;
             const fullUrl = `${apiHost}/api/CustomerServices/${requestedAction}?tableNumber=${selectedNumber}`;
             console.log(fullUrl);

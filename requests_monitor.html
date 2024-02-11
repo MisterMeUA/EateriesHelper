@@ -16,7 +16,6 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-
             background-image: linear-gradient(rgba(255, 255, 255, 0), rgba(0, 0, 0, 0.8)), url("./images/background.jpg");
             background-size: cover;
             background-position: center;
@@ -42,10 +41,10 @@
             box-shadow: none;
         }
 
-        nav .brand-logo {
-            display: flex;
-            align-items: center;
-        }
+            nav .brand-logo {
+                display: flex;
+                align-items: center;
+            }
 
         .page-footer {
             background-color: transparent;
@@ -55,7 +54,7 @@
             background: rgba(255, 255, 255, 0.7);
         }
 
-        .input-field>label, input::placeholder, label {
+        .input-field > label, input::placeholder, label {
             color: #444;
         }
 
@@ -91,12 +90,12 @@
                     <button id="deleteAll" class="waves-effect waves-light btn" style="position: absolute; right: 20px;"><i class="material-icons left">delete</i> Delete All</button>
                     <table class="highlight" id="requestsTable" style="width:100%;">
                         <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Date</th>
-                            <th>Request</th>
-                            <th>Action</th>
-                        </tr>
+                            <tr>
+                                <th>Table Number</th>
+                                <th>Request type</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
                         </thead>
                         <tbody>
                         </tbody>
@@ -110,17 +109,22 @@
     </footer>
 
     <script>
-        $(document).ready(function(){
+        $(document).ready(function () {
             $('.sidenav').sidenav();
         });
+
+        const enumMapping = {
+            1: 'Ask Bill',
+            2: 'Call Waiter',
+        };
 
         let endpoint = ''; // Default endpoint
         let connection;
 
         function connectSignalR() {
-            endpoint = 'http://localhost:8082'; // Fallback to localhost if no input
+            endpoint = 'http://ec2-3-82-128-6.compute-1.amazonaws.com:8081'; // Fallback to localhost if no input
             connection = new signalR.HubConnectionBuilder()
-                .withUrl(`${endpoint}/requestHub`, {skipNegotiation: true, transport: signalR.HttpTransportType.WebSockets,}) // Use the input value for the endpoint
+                .withUrl(`${endpoint}/requestHub`, { skipNegotiation: true, transport: signalR.HttpTransportType.WebSockets, }) // Use the input value for the endpoint
                 .configureLogging(signalR.LogLevel.Information)
                 .build();
 
@@ -129,31 +133,31 @@
         }
 
         function setupSignalR() {
-            connection.on("ReceiveRequest", function(request) {
+            connection.on("ReceiveRequest", function (request) {
                 dataTable.row.add([
-                    request.id,
+                    request.requestIdentifier.tableNumber,
+                    ActionEnum[request.requestIdentifier.requestType],
                     new Date(request.creationDateTime).toLocaleString(),
-                    request.request,
-                    `<button onclick="deleteRequest('${request.id}')">Delete</button>`
+                    `<button class="waves-effect waves-light btn" onclick="deleteRequest(${request.requestIdentifier.tableNumber}, ${request.requestIdentifier.requestType})">Delete</button>`
                 ]).draw(false);
             });
 
-            connection.on("DeleteRequest", function(id) {
-                dataTable.rows().every(function() {
-                    if (this.data()[0] === id) {
+            connection.on("DeleteRequest", function (id) {
+                dataTable.rows().every(function () {
+                    if (this.data()[0] === id.tableNumber && this.data()[1] == ActionEnum[id.requestType]) {
                         dataTable.row(this).remove().draw();
                     }
                 });
             });
 
-            connection.on("LoadExistingRequests", function(requests) {
+            connection.on("LoadExistingRequests", function (requests) {
                 dataTable.clear(); // Clear the table before adding new rows
                 requests.forEach(request => {
                     dataTable.row.add([
-                        request.id,
+                        request.requestIdentifier.tableNumber,
+                        ActionEnum[request.requestIdentifier.requestType],
                         new Date(request.creationDateTime).toLocaleString(),
-                        request.request,
-                        `<button onclick="deleteRequest('${request.id}')">Delete</button>`
+                        `<button class="waves-effect waves-light btn" onclick="deleteRequest(${request.requestIdentifier.tableNumber}, ${request.requestIdentifier.requestType})">Delete</button>`
                     ]).draw(false);
                 });
             });
@@ -176,26 +180,35 @@
             "paging": false
         });
 
-        function deleteRequest(id) {
-            connection.invoke("DeleteRequest", id);
+        function deleteRequest(tableNumber, requestType) {
+            $.ajax({
+                url: `${endpoint}/api/CustomerServices/request/${tableNumber}/${requestType}`, // Use the input value for the endpoint
+                type: 'DELETE',
+                success: function (result) {
+                    
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error deleting all requests:", xhr.responseText);
+                }
+            });
         }
 
-        $('#deleteAll').click(function() {
+        $('#deleteAll').click(function () {
             $.ajax({
                 url: `${endpoint}/api/CustomerServices/request`, // Use the input value for the endpoint
                 type: 'DELETE',
-                success: function(result) {
+                success: function (result) {
                     dataTable.clear().draw(); // Clear the table on successful delete
                 },
-                error: function(xhr, status, error) {
+                error: function (xhr, status, error) {
                     console.error("Error deleting all requests:", xhr.responseText);
                 }
             });
         });
 
         // Initial connection setup
-        $('#endpointInput').on('change', function() {
-            if(connection) {
+        $('#endpointInput').on('change', function () {
+            if (connection) {
                 connection.stop().then(connectSignalR);
             } else {
                 connectSignalR();
@@ -203,9 +216,21 @@
         });
 
         // Connect on page load with default or previous session endpoint if available
-        $(document).ready(function() {
+        $(document).ready(function () {
             connectSignalR(); // Attempt to connect with default or input-specified endpoint
         });
+
+        function generateEnumMap(mapping) {
+            const reverseMapping = {};
+            Object.keys(mapping).forEach(key => {
+                const value = mapping[key];
+                reverseMapping[key] = value; // Original mapping
+                reverseMapping[value] = Number(key); // Reverse mapping
+            });
+            return reverseMapping;
+        }
+
+        const ActionEnum = generateEnumMap(enumMapping);
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </body>
